@@ -1,0 +1,5 @@
+FOLDER_ID = "***"
+CLOUD_ID  = "***"
+DNS_ZONE = "vvot34.itiscl.ru."
+DOMAIN = "vvot34.itiscl.ru"
+USER_ZONE = "project"

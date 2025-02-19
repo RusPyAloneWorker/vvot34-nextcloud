@@ -1,0 +1,66 @@
+---
+- name: NextCloud
+  hosts: server
+
+  tasks: 
+    - name: Timezone settings
+      community.general.timezone:
+        name: Europe/Moscow
+    - name: Upgrade Software
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: "yes"
+    - name: Install Packages
+      ansible.builtin.apt:
+        pkg: 
+          - apache2
+          - libapache2-mod-php
+          - php-curl
+          - php-gd
+          - php-json
+          - php-mbstring
+          - php-xml
+          - php-zip 
+          - php-pgsql
+          - postgresql-all
+          - bzip2
+          - postgresql
+          - postgresql-contrib
+          - unzip
+          - wget
+          - python3-pip
+          - python3-psycopg2
+        state: present
+    - name: Download and Unpack NextCloud
+      ansible.builtin.unarchive:
+        dest: "/var/www/html"
+        src: "https://download.nextcloud.com/server/releases/latest-30.tar.bz2"
+        remote_src: true
+        owner: "www-data"
+        group: "www-data"
+        creates: "/var/www/html/nextcloud"
+
+    - name: Обеспечение запуска PostgreSQL
+      service:
+        name: postgresql
+        state: started
+        enabled: yes
+    - name: Install Python for PostrgesUser
+      pip:
+        name: psycopg2-binary
+        extra_args: "--break-system-packages"
+        executable: pip3
+    - name: Postgresql user
+      become: true
+      become_user: postgres
+      # become_method: ansible.builtin.sudo
+      community.postgresql.postgresql_user:
+        name: dbuser
+        password: dbpassword
+    - name: Postrgesql DB
+      become: true
+      become_user: postgres
+      # become_method: ansible.builtin.sudo
+      community.postgresql.postgresql_db:
+        name: dbnextcloud
+        owner: "dbuser"
