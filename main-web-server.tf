@@ -19,17 +19,6 @@ provider "yandex" {
   zone                     = var.ZONE
 }
 
-resource "null_resource" "run_ansible_playbook" {
-  triggers = {
-    playbook_hash = filemd5("main-server.yaml")
-    hosts_file_hash = filemd5("hosts")
-  }
-
-  provisioner "local-exec" {
-    command = "ansible-playbook --become --become-user root --become-method sudo -i hosts main-server.yaml"
-  }
-}
-
 resource "yandex_vpc_network" "network" {
   name = "web-server-network"
 }
@@ -88,7 +77,7 @@ resource "yandex_dns_zone" "dns_zone" {
 # Для основного домена
 resource "yandex_dns_recordset" "web" {
   zone_id = yandex_dns_zone.dns_zone.id
-  name    = "${var.DOMAIN}." # "vvot34.itiscl.ru."
+  name    = "${var.DNS_ZONE}" # "vvot34.itiscl.ru."
   type    = "A"
   ttl     = 300
   data    = [yandex_compute_instance.server.network_interface.0.nat_ip_address]
@@ -111,34 +100,34 @@ resource "yandex_cm_certificate" "certificate" {
   }
 }
 
-resource "yandex_api_gateway" "api_gateway" {
-  name = "gateaway"
-  custom_domains {
-    fqdn = "${var.DOMAIN}"
-    certificate_id = yandex_cm_certificate.certificate.id
-  }
+# resource "yandex_api_gateway" "api_gateway" {
+#   name = "gateaway"
+#   custom_domains {
+#     fqdn = "${var.DOMAIN}"
+#     certificate_id = yandex_cm_certificate.certificate.id
+#   }
 
-  spec = <<-EOT
-    openapi: 3.0.0
-    info:
-      title: Sample API
-      version: 1.0.0
-    paths:
-      /:
-        get:
-          x-yc-apigateway-integration:
-            type: http
-            url: http://${var.DOMAIN}
-      /{path}:
-        get:
-          parameters:
-            - name: path
-              in: path
-              required: true
-              schema:
-                type: string
-          x-yc-apigateway-integration:
-            type: http
-            url: http://${var.DOMAIN}/{nextfound}
-EOT
-}
+#   spec = <<-EOT
+#     openapi: 3.0.0
+#     info:
+#       title: Sample API
+#       version: 1.0.0
+#     paths:
+#       /:
+#         get:
+#           x-yc-apigateway-integration:
+#             type: http
+#             url: http://${var.DOMAIN}
+#       /{path}:
+#         get:
+#           parameters:
+#             - name: path
+#               in: path
+#               required: true
+#               schema:
+#                 type: string
+#           x-yc-apigateway-integration:
+#             type: http
+#             url: http://${var.DOMAIN}/{nextfound}
+# EOT
+# }
